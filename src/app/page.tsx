@@ -2,6 +2,9 @@ import Link from "next/link";
 import { ArrowRight, Flame, Hash, Sparkles } from "lucide-react";
 
 import { HomeFeed } from "@/components/posts/home-feed";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home({
   searchParams,
@@ -11,6 +14,11 @@ export default async function Home({
   const { tab } = await searchParams;
   const active = tab === "following" ? "following" : "for-you";
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <section className="space-y-6">
@@ -19,10 +27,17 @@ export default async function Home({
           <div className="absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-linear-to-tr from-foreground/10 to-transparent blur-3xl" />
 
           <div className="relative space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5" />
-              Read free. Save & engage after you sign up.
-            </div>
+            {!user ? (
+              <div className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5" />
+                Read free. Save & engage after you sign up.
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5" />
+                Welcome back — your feed is ready.
+              </div>
+            )}
             <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
               News that feels modern — curated, social, and beautifully readable.
             </h1>
@@ -32,17 +47,26 @@ export default async function Home({
               editor and one hero image.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Link
-                href="/auth/sign-up"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-95"
-              >
-                Create your profile <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              {!user ? (
+                <Link
+                  href="/auth/sign-up"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-95"
+                >
+                  Create your profile <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              ) : (
+                <Link
+                  href="/me"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-95"
+                >
+                  Go to profile <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              )}
               <Link
                 href="/new"
                 className="inline-flex h-10 items-center justify-center rounded-full border bg-background px-5 text-sm font-medium shadow-sm transition hover:bg-accent"
               >
-                Start writing
+                Write an article
               </Link>
             </div>
           </div>

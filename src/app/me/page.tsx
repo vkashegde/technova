@@ -101,7 +101,8 @@ export default async function MePage() {
                 Signed in as <span className="text-foreground">{user.email}</span>
               </p>
               <p className="text-xs text-muted-foreground">
-                User id: <span className="font-mono text-foreground">{user.id}</span>
+                User id:{" "}
+                <span className="break-all font-mono text-foreground">{user.id}</span>
               </p>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <span>

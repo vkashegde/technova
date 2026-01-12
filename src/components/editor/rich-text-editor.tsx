@@ -137,13 +137,13 @@ export function RichTextEditor({ initialContent, onChange }: Props) {
 
         <div className="mx-2 h-6 w-px bg-border" />
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <LinkIcon className="h-4 w-4 text-muted-foreground" />
           <Input
             value={link}
             onChange={(e) => setLink(e.target.value)}
             placeholder="https://…"
-            className="h-9 w-52"
+            className="h-9 w-full sm:w-52"
           />
           <Button type="button" variant="outline" onClick={setOrUnsetLink}>
             Set

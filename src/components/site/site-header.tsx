@@ -18,14 +18,15 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-foreground text-background">
-            N
+            T
           </span>
           <span className="hidden text-sm font-semibold tracking-tight sm:inline">
-            NewsBlogs
+            TechNova
           </span>
         </Link>
 
-        <div className="hidden flex-1 items-center md:flex">
+        {/* Hide the search bar on small screens to avoid header overflow */}
+        <div className="hidden flex-1 items-center lg:flex">
           <div className="relative w-full max-w-md">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -59,7 +60,7 @@ export async function SiteHeader() {
               <Button asChild variant="ghost">
                 <Link href="/auth/sign-in">Sign in</Link>
               </Button>
-              <Button asChild>
+              <Button asChild className="hidden sm:inline-flex">
                 <Link href="/auth/sign-up">Get started</Link>
               </Button>
             </div>

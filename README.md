@@ -1,4 +1,4 @@
-## NewsBlogs
+## TechNova
 
 Modern news + blog website built with **Next.js (App Router)** and **Supabase**.
 
