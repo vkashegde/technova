@@ -10,7 +10,7 @@ export async function PostComments({ postId }: { postId: string }) {
 
   const { data } = await supabase
     .from("comments")
-    .select("id,body,created_at,author:profiles(username,full_name)")
+    .select("id,body,created_at,author:profiles!comments_author_id_fkey(username,full_name)")
     .eq("post_id", postId)
     .order("created_at", { ascending: false })
     .limit(50);

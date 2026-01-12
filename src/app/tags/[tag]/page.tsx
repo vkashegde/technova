@@ -74,7 +74,7 @@ export default async function TagPage({
     ? await supabase
         .from("posts")
         .select(
-          "id,title,excerpt,cover_image_path,created_at,author:profiles(username,full_name)",
+          "id,title,excerpt,cover_image_path,created_at,author:profiles!posts_author_id_fkey(username,full_name)",
         )
         .in("id", postIds)
         .eq("status", "published")

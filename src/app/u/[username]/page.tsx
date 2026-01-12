@@ -54,7 +54,9 @@ export default async function UserProfilePage({
 
   const postQuery = supabase
     .from("posts")
-    .select("id,title,excerpt,cover_image_path,created_at,author:profiles(username,full_name)")
+    .select(
+      "id,title,excerpt,cover_image_path,created_at,author:profiles!posts_author_id_fkey(username,full_name)",
+    )
     .eq("author_id", typedProfile.id)
     .order("created_at", { ascending: false })
     .limit(20);

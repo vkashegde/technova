@@ -65,7 +65,7 @@ export async function HomeFeed({ mode = "for-you" }: { mode?: Mode }) {
     const { data } = await supabase
       .from("posts")
       .select(
-        "id,title,excerpt,cover_image_path,created_at,author:profiles(username,full_name)",
+        "id,title,excerpt,cover_image_path,created_at,author:profiles!posts_author_id_fkey(username,full_name)",
       )
       .eq("status", "published")
       .or(orParts.join(","))
@@ -77,7 +77,7 @@ export async function HomeFeed({ mode = "for-you" }: { mode?: Mode }) {
     const { data } = await supabase
       .from("posts")
       .select(
-        "id,title,excerpt,cover_image_path,created_at,author:profiles(username,full_name)",
+        "id,title,excerpt,cover_image_path,created_at,author:profiles!posts_author_id_fkey(username,full_name)",
       )
       .eq("status", "published")
       .order("created_at", { ascending: false })

@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Calendar, Hash } from "lucide-react";
 import type { JSONContent } from "@tiptap/core";
 
@@ -10,10 +9,13 @@ import { PostComments } from "@/components/posts/post-comments";
 import { PostEngagement } from "@/components/posts/post-engagement";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { PostWithAuthor } from "@/lib/db/types";
 import { createClient } from "@/lib/supabase/server";
 import { publicPostImageUrl } from "@/lib/supabase/storage";
+
+export const dynamic = "force-dynamic";
 
 export default async function PostPage({
   params,
@@ -27,15 +29,62 @@ export default async function PostPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: post } = await supabase
+  const { data: post, error: postError } = await supabase
     .from("posts")
     .select(
-      "id,title,excerpt,content,cover_image_path,status,created_at,author:profiles(id,username,full_name,avatar_url)",
+      "id,title,excerpt,content,cover_image_path,status,created_at,author:profiles!posts_author_id_fkey(id,username,full_name,avatar_url)",
     )
     .eq("id", id)
     .maybeSingle();
 
-  if (!post) notFound();
+  if (!post) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <Card className="rounded-3xl">
+          <CardHeader>
+            <CardTitle>Post not available</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              This post may be <span className="text-foreground">private</span>, a{" "}
+              <span className="text-foreground">draft</span>, or it may have been deleted.
+            </p>
+            {user ? (
+              <p>
+                You’re signed in as{" "}
+                <span className="text-foreground">{user.email}</span>, but you don’t have
+                access to this post (it may belong to a different account).
+              </p>
+            ) : null}
+            {user ? (
+              <p className="text-xs">
+                Your user id: <span className="font-mono text-foreground">{user.id}</span>
+              </p>
+            ) : null}
+            {postError ? (
+              <p className="text-xs">
+                Debug: <span className="font-mono">{postError.message}</span>
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href="/">Back to feed</Link>
+              </Button>
+              {user ? (
+                <Button asChild className="rounded-full">
+                  <Link href="/me">Go to your profile</Link>
+                </Button>
+              ) : (
+                <Button asChild className="rounded-full">
+                  <Link href={`/auth/sign-in?next=/post/${id}`}>Sign in to view</Link>
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const typedPost = post as unknown as PostWithAuthor & { content: JSONContent | null };
 
   const { data: tagRows } = await supabase
