@@ -52,8 +52,34 @@ export type CommentRow = {
   body: string;
   created_at: string;
   author:
-    | Pick<ProfileRow, "username" | "full_name">
-    | Pick<ProfileRow, "username" | "full_name">[]
+    | Pick<ProfileRow, "username" | "full_name" | "avatar_url">
+    | Pick<ProfileRow, "username" | "full_name" | "avatar_url">[]
+    | null;
+};
+
+export type NotificationType =
+  | "post_liked"
+  | "post_commented"
+  | "post_bookmarked"
+  | "user_followed"
+  | "post_published";
+
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  actor_id: string;
+  type: NotificationType;
+  post_id: string | null;
+  payload: unknown | null;
+  created_at: string;
+  read_at: string | null;
+  actor:
+    | Pick<ProfileRow, "username" | "full_name" | "avatar_url">
+    | Pick<ProfileRow, "username" | "full_name" | "avatar_url">[]
+    | null;
+  post:
+    | { id: string; title: string }
+    | { id: string; title: string }[]
     | null;
 };
 

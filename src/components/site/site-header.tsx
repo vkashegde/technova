@@ -3,15 +3,38 @@ import { Search, SquarePen } from "lucide-react";
 
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { UserMenu } from "@/components/site/user-menu";
+import { NotificationsBell } from "@/components/notifications/notifications-bell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/server";
+import type { NotificationRow } from "@/lib/db/types";
 
 export async function SiteHeader() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const unreadCountRes = user
+    ? await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null)
+    : null;
+  const unreadCount = unreadCountRes?.count ?? 0;
+
+  const { data: notificationsData } = user
+    ? await supabase
+        .from("notifications")
+        .select(
+          "id,user_id,actor_id,type,post_id,payload,created_at,read_at,actor:profiles!notifications_actor_id_fkey(username,full_name,avatar_url),post:posts!notifications_post_id_fkey(id,title)",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    : { data: [] };
+  const notifications = (notificationsData ?? []) as unknown as NotificationRow[];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -47,14 +70,20 @@ export async function SiteHeader() {
           <ThemeToggle />
 
           {user ? (
-            <UserMenu
-              user={{
-                email: user.email,
-                username: (user.user_metadata?.username as string | undefined) ?? null,
-                avatarUrl:
-                  (user.user_metadata?.avatar_url as string | undefined) ?? null,
-              }}
-            />
+            <>
+              <NotificationsBell
+                unreadCount={unreadCount}
+                notifications={notifications}
+              />
+              <UserMenu
+                user={{
+                  email: user.email,
+                  username: (user.user_metadata?.username as string | undefined) ?? null,
+                  avatarUrl:
+                    (user.user_metadata?.avatar_url as string | undefined) ?? null,
+                }}
+              />
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <Button asChild variant="ghost">

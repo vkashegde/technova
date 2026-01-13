@@ -35,6 +35,22 @@ export async function togglePostLikeAction(
       .eq("user_id", user.id);
   } else {
     await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
+
+    // Notify post author (including self-activity, if you liked your own post)
+    const { data: post } = await supabase
+      .from("posts")
+      .select("author_id")
+      .eq("id", postId)
+      .maybeSingle();
+    const authorId = (post as unknown as { author_id: string } | null)?.author_id;
+    if (authorId) {
+      await supabase.from("notifications").insert({
+        user_id: authorId,
+        actor_id: user.id,
+        type: "post_liked",
+        post_id: postId,
+      });
+    }
   }
 
   revalidatePath(`/post/${postId}`);
@@ -72,6 +88,22 @@ export async function togglePostBookmarkAction(
     await supabase
       .from("post_bookmarks")
       .insert({ post_id: postId, user_id: user.id });
+
+    // Notify post author (including self-activity)
+    const { data: post } = await supabase
+      .from("posts")
+      .select("author_id")
+      .eq("id", postId)
+      .maybeSingle();
+    const authorId = (post as unknown as { author_id: string } | null)?.author_id;
+    if (authorId) {
+      await supabase.from("notifications").insert({
+        user_id: authorId,
+        actor_id: user.id,
+        type: "post_bookmarked",
+        post_id: postId,
+      });
+    }
   }
 
   revalidatePath(`/post/${postId}`);
@@ -102,6 +134,23 @@ export async function addCommentAction(
   });
 
   if (error) return { ok: false, message: error.message };
+
+  // Notify post author (including self-activity)
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id")
+    .eq("id", postId)
+    .maybeSingle();
+  const authorId = (post as unknown as { author_id: string } | null)?.author_id;
+  if (authorId) {
+    await supabase.from("notifications").insert({
+      user_id: authorId,
+      actor_id: user.id,
+      type: "post_commented",
+      post_id: postId,
+      payload: { preview: body.slice(0, 140) },
+    });
+  }
 
   revalidatePath(`/post/${postId}`);
   return { ok: true, message: "" };
@@ -139,6 +188,13 @@ export async function toggleFollowUserAction(
     await supabase
       .from("follows")
       .insert({ following_id: targetId, follower_id: user.id });
+
+    // Notify target user
+    await supabase.from("notifications").insert({
+      user_id: targetId,
+      actor_id: user.id,
+      type: "user_followed",
+    });
   }
 
   if (targetUsername) revalidatePath(`/u/${targetUsername}`);
