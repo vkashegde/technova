@@ -50,16 +50,23 @@ export async function SiteHeader() {
 
         {/* Hide the search bar on small screens to avoid header overflow */}
         <div className="hidden flex-1 items-center lg:flex">
-          <div className="relative w-full max-w-md">
+          <form action="/search" method="get" className="relative w-full max-w-md">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              name="q"
               placeholder="Search articles, tags, authors…"
               className="pl-9"
             />
-          </div>
+          </form>
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
+          <Button asChild variant="ghost" size="icon" className="lg:hidden">
+            <Link href="/search" aria-label="Search">
+              <Search className="h-4 w-4" />
+            </Link>
+          </Button>
+
           <Button asChild variant="ghost" className="hidden sm:inline-flex">
             <Link href="/new" className="gap-2">
               <SquarePen className="h-4 w-4" />

@@ -6,6 +6,22 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+type TrendingTagRow = { id: string; name: string; score: number };
+type TrendingAuthorRow = {
+  id: string;
+  username: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  score: number;
+};
+type TrendingPostRow = {
+  id: string;
+  title: string;
+  excerpt: string | null;
+  created_at: string;
+  score: number;
+};
+
 export default async function Home({
   searchParams,
 }: {
@@ -18,6 +34,16 @@ export default async function Home({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const [trendingTagsRes, trendingAuthorsRes, trendingPostsRes] = await Promise.all([
+    supabase.rpc("get_trending_tags", { limit_count: 6 }),
+    supabase.rpc("get_trending_authors", { limit_count: 5 }),
+    supabase.rpc("get_trending_posts", { limit_count: 5 }),
+  ]);
+
+  const trendingTags = (trendingTagsRes.data ?? []) as unknown as TrendingTagRow[];
+  const trendingAuthors = (trendingAuthorsRes.data ?? []) as unknown as TrendingAuthorRow[];
+  const trendingPosts = (trendingPostsRes.data ?? []) as unknown as TrendingPostRow[];
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
@@ -123,37 +149,83 @@ export default async function Home({
             <Flame className="h-4 w-4" />
             <h3 className="text-sm font-semibold tracking-tight">Trending</h3>
           </div>
-          <div className="mt-4 grid gap-2 text-sm">
-            <Link
-              href="/tags/ai"
-              className="flex items-center justify-between rounded-xl border bg-background px-3 py-2 transition hover:bg-accent"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Hash className="h-4 w-4 text-muted-foreground" />
-                ai
-              </span>
-              <span className="text-xs text-muted-foreground">Soon</span>
-            </Link>
-            <Link
-              href="/tags/world"
-              className="flex items-center justify-between rounded-xl border bg-background px-3 py-2 transition hover:bg-accent"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Hash className="h-4 w-4 text-muted-foreground" />
-                world
-              </span>
-              <span className="text-xs text-muted-foreground">Soon</span>
-            </Link>
-            <Link
-              href="/tags/finance"
-              className="flex items-center justify-between rounded-xl border bg-background px-3 py-2 transition hover:bg-accent"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Hash className="h-4 w-4 text-muted-foreground" />
-                finance
-              </span>
-              <span className="text-xs text-muted-foreground">Soon</span>
-            </Link>
+          <div className="mt-4 space-y-4 text-sm">
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Hot posts</div>
+              {trendingPosts.length ? (
+                <div className="grid gap-2">
+                  {trendingPosts.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/post/${p.id}`}
+                      className="rounded-xl border bg-background px-3 py-2 transition hover:bg-accent"
+                    >
+                      <div className="line-clamp-2 text-sm font-medium">{p.title}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Score {Math.round(p.score)}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  No activity yet — likes, comments, and views will populate this.
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Hot tags</div>
+              {trendingTags.length ? (
+                <div className="grid gap-2">
+                  {trendingTags.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={`/tags/${t.name}`}
+                      className="flex items-center justify-between rounded-xl border bg-background px-3 py-2 transition hover:bg-accent"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        {t.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(t.score)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  No trending tags yet.
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Hot authors</div>
+              {trendingAuthors.length ? (
+                <div className="grid gap-2">
+                  {trendingAuthors.map((a) => (
+                    <Link
+                      key={a.id}
+                      href={`/u/${a.username}`}
+                      className="flex items-center justify-between rounded-xl border bg-background px-3 py-2 transition hover:bg-accent"
+                    >
+                      <span className="line-clamp-1">
+                        {a.full_name || `@${a.username}`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(a.score)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  No trending authors yet.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

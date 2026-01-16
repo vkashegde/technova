@@ -7,6 +7,7 @@ import { FreeReadGate } from "@/components/access/free-read-gate";
 import { RichTextViewer } from "@/components/editor/rich-text-viewer";
 import { PostComments } from "@/components/posts/post-comments";
 import { PostEngagement } from "@/components/posts/post-engagement";
+import { PostCard } from "@/components/posts/post-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,18 @@ import { createClient } from "@/lib/supabase/server";
 import { publicPostImageUrl } from "@/lib/supabase/storage";
 
 export const dynamic = "force-dynamic";
+
+type RelatedPostRow = {
+  id: string;
+  title: string;
+  excerpt: string | null;
+  cover_image_path: string | null;
+  created_at: string;
+  author_username: string;
+  author_full_name: string | null;
+  shared_tags: number;
+  tags: string[];
+};
 
 export default async function PostPage({
   params,
@@ -87,6 +100,13 @@ export default async function PostPage({
   }
   const typedPost = post as unknown as PostWithAuthor & { content: JSONContent | null };
 
+  // Record view (used for trending). Best-effort.
+  try {
+    await supabase.rpc("record_post_view", { p_post_id: id });
+  } catch {
+    // ignore
+  }
+
   const { data: tagRows } = await supabase
     .from("post_tags")
     .select("tag:tags(name)")
@@ -102,6 +122,12 @@ export default async function PostPage({
   const author = typedPost.author;
 
   const isAuthor = !!user && author?.id === user.id;
+
+  const relatedRes = await supabase.rpc("get_related_posts", {
+    p_post_id: id,
+    limit_count: 6,
+  });
+  const related = (relatedRes.data ?? []) as unknown as RelatedPostRow[];
 
   const likeCountRes = await supabase
     .from("post_likes")
@@ -218,6 +244,41 @@ export default async function PostPage({
 
         <PostComments postId={id} />
       </FreeReadGate>
+
+      {related.length ? (
+        <>
+          <Separator className="my-8" />
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold tracking-tight">Related posts</h2>
+              {tags[0] ? (
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link href={`/search?tag=${encodeURIComponent(tags[0])}`}>
+                    Explore more
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {related.map((p) => (
+                <PostCard
+                  key={p.id}
+                  post={{
+                    id: p.id,
+                    title: p.title,
+                    excerpt: p.excerpt,
+                    cover_image_path: p.cover_image_path,
+                    created_at: p.created_at,
+                    author: { username: p.author_username, full_name: p.author_full_name },
+                    tags: p.tags ?? [],
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
     </article>
   );
 }
